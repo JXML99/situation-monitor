@@ -1,22 +1,53 @@
 export default async function handler(req, res) {
     const API_KEY = 'f1d96853b6b649c59b823a069b1d7eb8';
     
+    // Blacklist low-quality or overly dominant sources
+    const BLOCKED_SOURCES = [
+        'The Times of India',
+        'India Today',
+        'NDTV',
+        'Zee News',
+        'News18'
+    ];
+    
     try {
-        const queries = ['politics OR government', 'stocks OR markets', 'breaking news'];
+        const queries = [
+            'politics OR government OR congress OR senate',
+            'stocks OR markets OR economy OR federal reserve',
+            'breaking news OR developing story'
+        ];
+        
         const allArticles = [];
         
         for (const query of queries) {
-            const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&sortBy=publishedAt&language=en&pageSize=10&apiKey=${API_KEY}`;
+            const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&sortBy=publishedAt&language=en&pageSize=20&apiKey=${API_KEY}`;
             const response = await fetch(url);
             const data = await response.json();
             if (data.articles) allArticles.push(...data.articles);
         }
         
-        const unique = Array.from(new Map(allArticles.map(a => [a.title, a])).values());
-        const processed = unique.slice(0, 15).map(article => {
+        // Filter out blocked sources and duplicates
+        const filtered = allArticles.filter(article => 
+            !BLOCKED_SOURCES.includes(article.source.name)
+        );
+        
+        // Remove duplicates by title
+        const unique = Array.from(new Map(filtered.map(a => [a.title, a])).values());
+        
+        // Limit articles per source to ensure diversity
+        const sourceCounts = {};
+        const diverse = unique.filter(article => {
+            const source = article.source.name;
+            sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+            return sourceCounts[source] <= 2; // Max 2 articles per source
+        });
+        
+        // Process articles
+        const processed = diverse.slice(0, 15).map(article => {
             const hoursAgo = (Date.now() - new Date(article.publishedAt)) / 3600000;
             const text = (article.title + ' ' + (article.description || '')).toLowerCase();
-            const category = text.match(/stock|market|economy/) ? 'markets' : hoursAgo < 3 ? 'breaking' : 'politics';
+            const category = text.match(/stock|market|economy|trading|investor|fed/) ? 'markets' : 
+                           hoursAgo < 3 ? 'breaking' : 'politics';
             
             return {
                 title: article.title,
@@ -24,15 +55,26 @@ export default async function handler(req, res) {
                 url: article.url,
                 source: article.source.name,
                 category,
-                timeAgo: hoursAgo < 1 ? `${Math.floor(hoursAgo * 60)}m ago` : hoursAgo < 24 ? `${Math.floor(hoursAgo)}h ago` : `${Math.floor(hoursAgo / 24)}d ago`
+                timeAgo: hoursAgo < 1 ? `${Math.floor(hoursAgo * 60)}m ago` : 
+                        hoursAgo < 24 ? `${Math.floor(hoursAgo)}h ago` : 
+                        `${Math.floor(hoursAgo / 24)}d ago`
             };
         });
         
+        // Extract keywords for trending
         const titles = processed.map(a => a.title).join(' ');
+        const stopWords = ['news', 'says', 'after', 'latest', 'report', 'update', 'live'];
         const words = titles.toLowerCase().match(/\b[a-z]{5,}\b/g) || [];
         const counts = {};
-        words.forEach(w => counts[w] = (counts[w] || 0) + 1);
-        const keywords = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6).filter(([,c]) => c > 2);
+        words.forEach(w => {
+            if (!stopWords.includes(w)) {
+                counts[w] = (counts[w] || 0) + 1;
+            }
+        });
+        const keywords = Object.entries(counts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 8)
+            .filter(([word, count]) => count > 1);
         
         res.status(200).json({ articles: processed, keywords });
     } catch (error) {
