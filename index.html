@@ -6,63 +6,103 @@
     <title>Situation Monitor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        body { 
+            background: linear-gradient(to bottom right, #0f172a, #1e1b4b, #0f172a);
+            min-height: 100vh;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glow {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+        }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .card-enter {
+            animation: slideIn 0.3s ease-out;
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #a78bfa, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
-    <div class="bg-slate-900 text-white p-6 shadow-lg">
-        <div class="max-w-7xl mx-auto">
-            <h1 class="text-4xl font-bold mb-1">Situation Monitor</h1>
-            <p class="text-slate-400 text-sm">Real-time pulse on politics, markets & breaking news · <span id="lastUpdated">Loading...</span></p>
-        </div>
-    </div>
-
-    <div class="bg-white border-b border-gray-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-6 py-4">
-            <div class="flex items-center gap-3 mb-2">
-                <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                </svg>
-                <h2 class="font-bold text-sm uppercase text-gray-700 tracking-wide">Trending Now</h2>
-                <button onclick="loadData()" class="ml-auto text-xs bg-slate-100 hover:bg-slate-200 px-3 py-1 rounded-full text-slate-600 font-medium transition">
-                    Refresh ↻
+<body class="text-white">
+    
+    <!-- Header -->
+    <div class="sticky top-0 z-50 glass border-b border-white/10">
+        <div class="max-w-6xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl">
+                        🌐
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold gradient-text">Situation Monitor</h1>
+                        <p class="text-xs text-gray-400">What's happening right now</p>
+                    </div>
+                </div>
+                <button onclick="loadAll()" class="glass px-4 py-2 rounded-full text-sm font-medium hover:bg-white/10 transition flex items-center gap-2">
+                    <span>↻</span>
+                    <span class="hidden sm:inline">Refresh</span>
                 </button>
-                <button id="clearFilter" onclick="clearFilter()" style="display:none;" class="text-xs bg-red-100 hover:bg-red-200 px-3 py-1 rounded-full text-red-600 font-medium transition">
-                    Clear Filter ✕
-                </button>
-            </div>
-            <div id="trendingTerms" class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                <p class="text-gray-500 text-sm">Loading...</p>
             </div>
         </div>
     </div>
 
-    <div class="bg-slate-800 text-white">
-        <div class="max-w-7xl mx-auto px-6 py-4">
-            <div class="flex items-center gap-3 mb-2">
-                <span class="text-xl">📊</span>
-                <h2 class="font-bold text-sm uppercase tracking-wide">Market Movers</h2>
-                <span class="ml-auto text-xs text-gray-300" id="stocksUpdated">Loading stocks...</span>
+    <!-- Trending Tags -->
+    <div class="max-w-6xl mx-auto px-4 py-6">
+        <div class="flex items-center gap-2 mb-3">
+            <span class="text-sm font-semibold text-purple-400">🔥 TRENDING</span>
+            <button id="clearFilter" onclick="clearFilter()" style="display:none;" class="text-xs bg-red-500/20 hover:bg-red-500/30 px-3 py-1 rounded-full text-red-300 transition">
+                Clear ✕
+            </button>
+        </div>
+        <div id="trendingTerms" class="flex gap-2 overflow-x-auto pb-3 scrollbar-hide">
+            <div class="glass px-4 py-2 rounded-full text-sm animate-pulse">Loading...</div>
+        </div>
+    </div>
+
+    <!-- Market Ticker -->
+    <div class="max-w-6xl mx-auto px-4 pb-6">
+        <div class="glass rounded-2xl p-4 glow">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="text-sm font-semibold text-green-400">📈 MARKETS</span>
+                <span class="text-xs text-gray-400" id="stocksUpdated">Loading...</span>
             </div>
-            <div id="stocksRibbon" class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                <div class="flex-shrink-0 bg-slate-700 rounded-lg px-4 py-2 opacity-50">
-                    <div class="font-bold text-sm">Loading...</div>
+            <div id="stocksRibbon" class="flex gap-3 overflow-x-auto scrollbar-hide">
+                <div class="glass px-4 py-3 rounded-xl min-w-[100px] animate-pulse">
+                    <div class="h-4 bg-white/10 rounded mb-2"></div>
+                    <div class="h-3 bg-white/5 rounded"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="max-w-7xl mx-auto p-6">
-        <div class="mb-4">
-            <h2 class="text-2xl font-bold text-gray-900">
-                <span id="sectionTitle">Key Situations</span>
+    <!-- Feed -->
+    <div class="max-w-6xl mx-auto px-4 pb-8">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold" id="sectionTitle">
+                <span class="gradient-text">Your Feed</span>
             </h2>
-            <p class="text-gray-500 text-sm"><span id="situationCount">Loading...</span> developments</p>
+            <span class="text-sm text-gray-400"><span id="situationCount">0</span> posts</span>
         </div>
         
-        <div id="situationCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <p class="text-gray-500">Loading news...</p>
+        <div id="situationCards" class="space-y-4">
+            <!-- Loading skeleton -->
+            <div class="glass rounded-2xl p-6 animate-pulse">
+                <div class="h-6 bg-white/10 rounded mb-3 w-3/4"></div>
+                <div class="h-4 bg-white/5 rounded mb-2"></div>
+                <div class="h-4 bg-white/5 rounded w-1/2"></div>
+            </div>
         </div>
     </div>
 
@@ -74,7 +114,7 @@
         function clearFilter() {
             selectedTerm = null;
             document.getElementById('clearFilter').style.display = 'none';
-            document.getElementById('sectionTitle').textContent = 'Key Situations';
+            document.getElementById('sectionTitle').innerHTML = '<span class="gradient-text">Your Feed</span>';
             renderArticles(allArticles);
             renderTrending(allKeywords);
         }
@@ -87,7 +127,7 @@
             
             selectedTerm = term;
             document.getElementById('clearFilter').style.display = 'inline-block';
-            document.getElementById('sectionTitle').textContent = 'Situations mentioning "' + term + '"';
+            document.getElementById('sectionTitle').innerHTML = '<span class="gradient-text">#' + term + '</span>';
             
             var filtered = allArticles.filter(function(article) {
                 return article.title.toLowerCase().includes(term.toLowerCase()) ||
@@ -96,7 +136,6 @@
             
             renderArticles(filtered);
             renderTrending(allKeywords);
-            
             document.getElementById('situationCount').textContent = filtered.length;
         }
 
@@ -105,61 +144,72 @@
                 var word = kw[0];
                 var count = kw[1];
                 var isSelected = selectedTerm === word;
-                var ringClass = isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : '';
-                var fire = count > 3 ? '<span class="text-red-500 text-xs">🔥</span>' : '';
+                var selectedClass = isSelected ? 'bg-purple-500/30 border-purple-400' : 'glass hover:bg-white/10';
                 
-                return '<div onclick="selectTerm(\'' + word + '\')" class="flex-shrink-0 bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 hover:shadow-md hover:border-blue-400 transition-all cursor-pointer ' + ringClass + '">' +
-                    '<div class="flex items-center gap-2">' +
-                        '<span class="font-bold text-gray-900">' + word.charAt(0).toUpperCase() + word.slice(1) + '</span>' +
-                        fire +
-                    '</div>' +
-                    '<p class="text-xs text-gray-500 mt-1">' + count + ' mentions</p>' +
-                '</div>';
+                return '<button onclick="selectTerm(\'' + word + '\')" class="' + selectedClass + ' px-4 py-2 rounded-full text-sm font-medium transition border border-white/10 whitespace-nowrap">' +
+                    '#' + word +
+                    '<span class="ml-1 text-xs opacity-60">' + count + '</span>' +
+                '</button>';
             }).join('');
             
-            document.getElementById('trendingTerms').innerHTML = html || '<p class="text-gray-500 text-sm">No trending topics</p>';
+            document.getElementById('trendingTerms').innerHTML = html || '<div class="text-sm text-gray-400">No trends yet</div>';
         }
 
         function renderArticles(articles) {
-            var badges = { 
-                politics: 'bg-indigo-50 text-indigo-700', 
-                markets: 'bg-slate-100 text-slate-700', 
-                breaking: 'bg-rose-600 text-white' 
-            };
-            var icons = { politics: '🏛️', markets: '📈', breaking: '⚡' };
-            
             if (articles.length === 0) {
                 document.getElementById('situationCards').innerHTML = 
-                    '<div class="col-span-full bg-yellow-50 border border-yellow-200 rounded-lg p-6">' +
-                        '<p class="text-yellow-800 font-semibold">No articles found for "' + selectedTerm + '"</p>' +
-                        '<p class="text-yellow-600 text-sm mt-2">Try selecting a different trending term or clear the filter.</p>' +
+                    '<div class="glass rounded-2xl p-8 text-center">' +
+                        '<div class="text-4xl mb-3">🔍</div>' +
+                        '<p class="text-gray-300 font-semibold">No posts found for #' + selectedTerm + '</p>' +
+                        '<p class="text-gray-500 text-sm mt-2">Try a different tag or clear the filter</p>' +
                     '</div>';
                 return;
             }
             
-            var html = articles.map(function(article) {
-                var badge = badges[article.category];
-                var icon = icons[article.category];
-                var label = article.category === 'breaking' ? '⚡ BREAKING' : 
-                           article.category === 'markets' ? '📈 Markets' : '🏛️ Politics';
-                var desc = article.description + (article.description.length >= 150 ? '...' : '');
+            var html = articles.map(function(article, index) {
+                var categoryColors = {
+                    politics: { bg: 'bg-blue-500/20', text: 'text-blue-300', emoji: '🏛️' },
+                    markets: { bg: 'bg-green-500/20', text: 'text-green-300', emoji: '📈' },
+                    breaking: { bg: 'bg-red-500/20', text: 'text-red-300', emoji: '⚡' }
+                };
+                var cat = categoryColors[article.category];
                 
-                return '<div class="bg-white rounded-xl shadow-md border border-gray-200 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer group">' +
-                    '<div class="flex items-start justify-between mb-4">' +
-                        '<span class="text-3xl">' + icon + '</span>' +
-                        '<span class="text-xs px-3 py-1 rounded-full font-semibold ' + badge + '">' + label + '</span>' +
+                return '<div class="glass rounded-2xl p-6 hover:bg-white/10 transition card-enter" style="animation-delay: ' + (index * 0.05) + 's">' +
+                    '<div class="flex items-start gap-3 mb-4">' +
+                        '<div class="w-12 h-12 rounded-full ' + cat.bg + ' flex items-center justify-center text-2xl flex-shrink-0">' +
+                            cat.emoji +
+                        '</div>' +
+                        '<div class="flex-1 min-w-0">' +
+                            '<div class="flex items-center gap-2 mb-1">' +
+                                '<span class="font-bold text-gray-200">' + article.source + '</span>' +
+                                '<span class="text-xs text-gray-500">·</span>' +
+                                '<span class="text-xs text-gray-500">' + article.timeAgo + '</span>' +
+                            '</div>' +
+                            '<span class="text-xs px-2 py-1 rounded-full ' + cat.bg + ' ' + cat.text + ' font-medium">' +
+                                article.category.toUpperCase() +
+                            '</span>' +
+                        '</div>' +
                     '</div>' +
-                    '<h3 class="font-bold text-lg mb-3 leading-tight text-gray-900 group-hover:text-blue-600 transition-colors">' +
+                    
+                    '<h3 class="text-lg font-bold text-white mb-2 leading-snug hover:text-purple-300 transition cursor-pointer">' +
                         article.title +
                     '</h3>' +
-                    '<p class="text-gray-600 text-sm mb-2 leading-relaxed">' + desc + '</p>' +
-                    '<p class="text-gray-900 text-sm font-semibold mb-4 leading-relaxed">' +
-                        article.source +
+                    
+                    '<p class="text-gray-400 text-sm mb-4 leading-relaxed">' +
+                        article.description.substring(0, 150) + (article.description.length > 150 ? '...' : '') +
                     '</p>' +
-                    '<div class="flex items-center justify-between text-xs text-gray-400 pt-4 border-t border-gray-100">' +
-                        '<span>' + article.source + ' · ' + article.timeAgo + '</span>' +
-                        '<a href="' + article.url + '" target="_blank" class="text-blue-600 hover:text-blue-700 font-medium group-hover:underline">' +
-                            'Read more →' +
+                    
+                    '<div class="flex items-center justify-between pt-4 border-t border-white/10">' +
+                        '<div class="flex items-center gap-3 text-xs text-gray-500">' +
+                            '<button class="hover:text-purple-400 transition flex items-center gap-1">' +
+                                '<span>💬</span><span>Share</span>' +
+                            '</button>' +
+                            '<button class="hover:text-purple-400 transition flex items-center gap-1">' +
+                                '<span>🔖</span><span>Save</span>' +
+                            '</button>' +
+                        '</div>' +
+                        '<a href="' + article.url + '" target="_blank" class="text-purple-400 hover:text-purple-300 text-sm font-medium flex items-center gap-1 transition">' +
+                            'Read more <span>→</span>' +
                         '</a>' +
                     '</div>' +
                 '</div>';
@@ -171,37 +221,34 @@
         function renderStocks(stocks) {
             if (!stocks || stocks.length === 0) {
                 document.getElementById('stocksRibbon').innerHTML = 
-                    '<div class="text-xs text-gray-400">No stock data available</div>';
+                    '<div class="text-sm text-gray-400">No data</div>';
                 return;
             }
             
             var html = stocks.map(function(stock) {
-                var arrowIcon = stock.direction === 'up' 
-                    ? '<svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>'
-                    : '<svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>';
+                var isUp = stock.direction === 'up';
+                var colorClass = isUp ? 'text-green-400' : 'text-red-400';
+                var bgClass = isUp ? 'bg-green-500/10' : 'bg-red-500/10';
+                var arrow = isUp ? '↑' : '↓';
+                var sign = isUp ? '+' : '';
                 
-                var colorClass = stock.direction === 'up' ? 'text-green-400' : 'text-red-400';
-                var sign = stock.direction === 'up' ? '+' : '';
-                
-                return '<div class="flex-shrink-0 bg-slate-700 backdrop-blur-sm border border-slate-600 rounded-lg px-4 py-2 hover:bg-slate-600 transition-all cursor-pointer min-w-[120px]">' +
-                    '<div class="flex items-center gap-2 mb-1">' +
-                        '<span class="font-bold text-lg">' + stock.ticker + '</span>' +
-                        arrowIcon +
+                return '<div class="glass ' + bgClass + ' rounded-xl px-4 py-3 min-w-[110px] hover:scale-105 transition cursor-pointer">' +
+                    '<div class="flex items-center justify-between mb-1">' +
+                        '<span class="font-bold text-white">' + stock.ticker + '</span>' +
+                        '<span class="text-lg">' + arrow + '</span>' +
                     '</div>' +
-                    '<p class="text-sm text-gray-200">$' + stock.price + '</p>' +
-                    '<p class="text-xs font-bold ' + colorClass + '">' +
+                    '<div class="text-sm text-gray-300 mb-1">$' + stock.price + '</div>' +
+                    '<div class="text-xs font-bold ' + colorClass + '">' +
                         sign + stock.changePercent + '%' +
-                    '</p>' +
+                    '</div>' +
                 '</div>';
             }).join('');
             
             document.getElementById('stocksRibbon').innerHTML = html;
-            document.getElementById('stocksUpdated').textContent = '15-min delay · Updates every 5min';
+            document.getElementById('stocksUpdated').textContent = 'Live · 15min delay';
         }
 
         function loadData() {
-            document.getElementById('lastUpdated').textContent = 'Updating...';
-            
             fetch('/api/news')
                 .then(function(response) { return response.json(); })
                 .then(function(data) {
@@ -220,16 +267,15 @@
                         renderArticles(allArticles);
                         document.getElementById('situationCount').textContent = allArticles.length;
                     }
-                    
-                    document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
                 })
                 .catch(function(error) {
                     console.error('Error:', error);
                     document.getElementById('situationCards').innerHTML = 
-                        '<div class="col-span-full bg-red-50 border border-red-200 rounded-lg p-6">' +
-                            '<p class="text-red-800 font-semibold">Error loading news</p>' +
-                            '<p class="text-red-600 text-sm mt-2">' + error.message + '</p>' +
-                            '<button onclick="loadData()" class="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Try Again</button>' +
+                        '<div class="glass rounded-2xl p-8 text-center">' +
+                            '<div class="text-4xl mb-3">⚠️</div>' +
+                            '<p class="text-red-300 font-semibold">Error loading feed</p>' +
+                            '<p class="text-gray-400 text-sm mt-2">' + error.message + '</p>' +
+                            '<button onclick="loadData()" class="mt-4 bg-purple-500 hover:bg-purple-600 px-6 py-2 rounded-full font-medium transition">Try Again</button>' +
                         '</div>';
                 });
         }
@@ -245,19 +291,21 @@
                 .catch(function(error) {
                     console.error('Stocks error:', error);
                     document.getElementById('stocksRibbon').innerHTML = 
-                        '<div class="text-xs text-red-400">Error loading stocks</div>';
+                        '<div class="text-sm text-red-400">Error loading</div>';
                 });
         }
+
+        function loadAll() {
+            loadData();
+            loadStocks();
+        }
         
-        // Load both news and stocks on page load
-        loadData();
-        loadStocks();
+        // Initial load
+        loadAll();
         
-        // Refresh news every 15 minutes
-        setInterval(loadData, 900000);
-        
-        // Refresh stocks every 5 minutes
-        setInterval(loadStocks, 300000);
+        // Auto-refresh
+        setInterval(loadData, 900000); // News every 15min
+        setInterval(loadStocks, 300000); // Stocks every 5min
     </script>
 </body>
 </html>
