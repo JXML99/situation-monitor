@@ -149,4 +149,115 @@
                         '<span class="text-3xl">' + icon + '</span>' +
                         '<span class="text-xs px-3 py-1 rounded-full font-semibold ' + badge + '">' + label + '</span>' +
                     '</div>' +
-                    '<h3 class="font-bold text-lg mb-3 leading-tigh
+                    '<h3 class="font-bold text-lg mb-3 leading-tight text-gray-900 group-hover:text-blue-600 transition-colors">' +
+                        article.title +
+                    '</h3>' +
+                    '<p class="text-gray-600 text-sm mb-2 leading-relaxed">' + desc + '</p>' +
+                    '<p class="text-gray-900 text-sm font-semibold mb-4 leading-relaxed">' +
+                        article.source +
+                    '</p>' +
+                    '<div class="flex items-center justify-between text-xs text-gray-400 pt-4 border-t border-gray-100">' +
+                        '<span>' + article.source + ' · ' + article.timeAgo + '</span>' +
+                        '<a href="' + article.url + '" target="_blank" class="text-blue-600 hover:text-blue-700 font-medium group-hover:underline">' +
+                            'Read more →' +
+                        '</a>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+            
+            document.getElementById('situationCards').innerHTML = html;
+        }
+
+        function renderStocks(stocks) {
+            if (!stocks || stocks.length === 0) {
+                document.getElementById('stocksRibbon').innerHTML = 
+                    '<div class="text-xs text-gray-400">No stock data available</div>';
+                return;
+            }
+            
+            var html = stocks.map(function(stock) {
+                var arrowIcon = stock.direction === 'up' 
+                    ? '<svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>'
+                    : '<svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>';
+                
+                var colorClass = stock.direction === 'up' ? 'text-green-400' : 'text-red-400';
+                var sign = stock.direction === 'up' ? '+' : '';
+                
+                return '<div class="flex-shrink-0 bg-slate-700 backdrop-blur-sm border border-slate-600 rounded-lg px-4 py-2 hover:bg-slate-600 transition-all cursor-pointer min-w-[120px]">' +
+                    '<div class="flex items-center gap-2 mb-1">' +
+                        '<span class="font-bold text-lg">' + stock.ticker + '</span>' +
+                        arrowIcon +
+                    '</div>' +
+                    '<p class="text-sm text-gray-200">$' + stock.price + '</p>' +
+                    '<p class="text-xs font-bold ' + colorClass + '">' +
+                        sign + stock.changePercent + '%' +
+                    '</p>' +
+                '</div>';
+            }).join('');
+            
+            document.getElementById('stocksRibbon').innerHTML = html;
+            document.getElementById('stocksUpdated').textContent = '15-min delay · Updates every 5min';
+        }
+
+        function loadData() {
+            document.getElementById('lastUpdated').textContent = 'Updating...';
+            
+            fetch('/api/news')
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    if (!data.articles || data.articles.length === 0) {
+                        throw new Error('No articles found');
+                    }
+                    
+                    allArticles = data.articles;
+                    allKeywords = data.keywords || [];
+                    
+                    renderTrending(allKeywords);
+                    
+                    if (selectedTerm) {
+                        selectTerm(selectedTerm);
+                    } else {
+                        renderArticles(allArticles);
+                        document.getElementById('situationCount').textContent = allArticles.length;
+                    }
+                    
+                    document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+                })
+                .catch(function(error) {
+                    console.error('Error:', error);
+                    document.getElementById('situationCards').innerHTML = 
+                        '<div class="col-span-full bg-red-50 border border-red-200 rounded-lg p-6">' +
+                            '<p class="text-red-800 font-semibold">Error loading news</p>' +
+                            '<p class="text-red-600 text-sm mt-2">' + error.message + '</p>' +
+                            '<button onclick="loadData()" class="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Try Again</button>' +
+                        '</div>';
+                });
+        }
+
+        function loadStocks() {
+            fetch('/api/stocks')
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    if (data.stocks) {
+                        renderStocks(data.stocks);
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Stocks error:', error);
+                    document.getElementById('stocksRibbon').innerHTML = 
+                        '<div class="text-xs text-red-400">Error loading stocks</div>';
+                });
+        }
+        
+        // Load both news and stocks on page load
+        loadData();
+        loadStocks();
+        
+        // Refresh news every 15 minutes
+        setInterval(loadData, 900000);
+        
+        // Refresh stocks every 5 minutes
+        setInterval(loadStocks, 300000);
+    </script>
+</body>
+</html>
