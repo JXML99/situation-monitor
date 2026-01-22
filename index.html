@@ -8,6 +8,13 @@
     <style>
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+        }
+        .trending-indicator {
+            animation: pulse-glow 2s infinite;
+        }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
@@ -24,7 +31,7 @@
                 <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                 </svg>
-                <h2 class="font-bold text-sm uppercase text-gray-700 tracking-wide">Trending Now</h2>
+                <h2 class="font-bold text-sm uppercase text-gray-700 tracking-wide">Trending Keywords</h2>
                 <button onclick="loadData()" class="ml-auto text-xs bg-slate-100 hover:bg-slate-200 px-3 py-1 rounded-full text-slate-600 font-medium transition">
                     Refresh ↻
                 </button>
@@ -54,15 +61,44 @@
     </div>
 
     <div class="max-w-7xl mx-auto p-6">
-        <div class="mb-4">
-            <h2 class="text-2xl font-bold text-gray-900">
-                <span id="sectionTitle">Key Situations</span>
-            </h2>
-            <p class="text-gray-500 text-sm"><span id="situationCount">Loading...</span> developments</p>
-        </div>
-        
-        <div id="situationCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <p class="text-gray-500">Loading news...</p>
+        <div class="flex gap-6">
+            <!-- Main Feed -->
+            <div class="flex-1">
+                <div class="mb-4">
+                    <h2 class="text-2xl font-bold text-gray-900">
+                        <span id="sectionTitle">Key Situations</span>
+                    </h2>
+                    <p class="text-gray-500 text-sm"><span id="situationCount">Loading...</span> developments</p>
+                </div>
+                
+                <div id="situationCards" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <p class="text-gray-500">Loading news...</p>
+                </div>
+            </div>
+
+            <!-- Trending Sidebar -->
+            <div class="w-80 flex-shrink-0 hidden lg:block">
+                <div class="sticky top-6">
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-5">
+                        <div class="flex items-center gap-2 mb-4">
+                            <div class="w-3 h-3 bg-red-500 rounded-full trending-indicator"></div>
+                            <h3 class="font-bold text-lg text-gray-900">TRENDING NOW</h3>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-4">Top 5 stories · Updates hourly</p>
+                        
+                        <div id="trendingNews" class="space-y-4">
+                            <div class="animate-pulse">
+                                <div class="h-4 bg-slate-200 rounded mb-2"></div>
+                                <div class="h-3 bg-slate-100 rounded w-3/4"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <p class="text-xs text-gray-400">Last updated: <span id="trendingUpdated">--:--</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -118,6 +154,35 @@
             }).join('');
             
             document.getElementById('trendingTerms').innerHTML = html || '<p class="text-gray-500 text-sm">No trending topics</p>';
+        }
+
+        function renderTrendingNews(trending) {
+            if (!trending || trending.length === 0) {
+                document.getElementById('trendingNews').innerHTML = 
+                    '<p class="text-sm text-gray-400">No trending stories</p>';
+                return;
+            }
+            
+            var html = trending.map(function(story, index) {
+                return '<div class="pb-4 border-b border-gray-100 last:border-0 last:pb-0">' +
+                    '<div class="flex items-start gap-2 mb-2">' +
+                        '<span class="text-lg font-bold text-red-500">' + (index + 1) + '</span>' +
+                        '<div class="flex-1">' +
+                            '<a href="' + story.url + '" target="_blank" class="font-semibold text-sm text-gray-900 hover:text-blue-600 transition leading-tight line-clamp-2">' +
+                                story.title +
+                            '</a>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="flex items-center gap-2 text-xs text-gray-500 ml-7">' +
+                        '<span>' + story.source + '</span>' +
+                        '<span>·</span>' +
+                        '<span>' + story.timeAgo + '</span>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+            
+            document.getElementById('trendingNews').innerHTML = html;
+            document.getElementById('trendingUpdated').textContent = new Date().toLocaleTimeString();
         }
 
         function renderArticles(articles) {
@@ -248,16 +313,31 @@
                         '<div class="text-xs text-red-400">Error loading stocks</div>';
                 });
         }
+
+        function loadTrendingNews() {
+            fetch('/api/trending')
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    if (data.trending) {
+                        renderTrendingNews(data.trending);
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Trending error:', error);
+                    document.getElementById('trendingNews').innerHTML = 
+                        '<p class="text-sm text-red-400">Error loading trending</p>';
+                });
+        }
         
-        // Load both news and stocks on page load
+        // Initial load
         loadData();
         loadStocks();
+        loadTrendingNews();
         
-        // Refresh news every 15 minutes
-        setInterval(loadData, 900000);
-        
-        // Refresh stocks every 5 minutes
-        setInterval(loadStocks, 300000);
+        // Auto-refresh
+        setInterval(loadData, 900000); // News every 15min
+        setInterval(loadStocks, 300000); // Stocks every 5min
+        setInterval(loadTrendingNews, 3600000); // Trending every 1 hour
     </script>
 </body>
 </html>
