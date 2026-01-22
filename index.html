@@ -172,4 +172,32 @@
                 
                 renderTrending(allKeywords);
                 
-                // If filter is active, re-apply i
+                // If filter is active, re-apply it
+                if (selectedTerm) {
+                    selectTerm(selectedTerm);
+                } else {
+                    renderArticles(allArticles);
+                    document.getElementById('situationCount').textContent = allArticles.length;
+                }
+                
+                document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('situationCards').innerHTML = `
+                    <div class="col-span-full bg-red-50 border border-red-200 rounded-lg p-6">
+                        <p class="text-red-800 font-semibold">Error loading news</p>
+                        <p class="text-red-600 text-sm mt-2">${error.message}</p>
+                        <button onclick="loadData()" class="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                            Try Again
+                        </button>
+                    </div>
+                `;
+            }
+        }
+        
+        loadData();
+        setInterval(loadData, 900000); // Refresh every 15 minutes
+    </script>
+</body>
+</html>
