@@ -1,0 +1,2 @@
+# situation-monitor
+news api
