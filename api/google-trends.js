@@ -1,4 +1,4 @@
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
     const API_KEY = 'f1d96853b6b649c59b823a069b1d7eb8';
     
     try {
@@ -7,7 +7,7 @@ module.exports = async function handler(req, res) {
         const data = await response.json();
         
         if (!data.articles) {
-            throw new Error('No articles');
+            return res.status(200).json({ trends: [] });
         }
         
         const keywords = {};
@@ -43,6 +43,6 @@ module.exports = async function handler(req, res) {
         
     } catch (error) {
         console.error('Error:', error);
-        res.status(500).json({ error: error.message, trends: [] });
+        res.status(200).json({ trends: [] });
     }
-};
+}
