@@ -1,12 +1,10 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     try {
-        // Top stock tickers to track
         const tickers = ['SPY', 'QQQ', 'AAPL', 'MSFT', 'GOOGL', 'TSLA', 'NVDA', 'META', 'AMZN'];
         
         const stockData = await Promise.all(
             tickers.map(async (ticker) => {
                 try {
-                    // Yahoo Finance quote endpoint (no auth needed)
                     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`;
                     const response = await fetch(url);
                     const data = await response.json();
@@ -36,11 +34,10 @@ export default async function handler(req, res) {
             })
         );
         
-        // Filter out nulls and sort by absolute change percentage
         const validStocks = stockData
             .filter(stock => stock !== null)
             .sort((a, b) => Math.abs(parseFloat(b.changePercent)) - Math.abs(parseFloat(a.changePercent)))
-            .slice(0, 6); // Top 6 movers
+            .slice(0, 6);
         
         res.status(200).json({ stocks: validStocks });
         
@@ -48,4 +45,4 @@ export default async function handler(req, res) {
         console.error('Stock API error:', error);
         res.status(500).json({ error: error.message });
     }
-}
+};
