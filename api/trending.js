@@ -1,8 +1,7 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     const API_KEY = 'f1d96853b6b649c59b823a069b1d7eb8';
     
     try {
-        // Fetch top headlines from multiple categories to find what's truly trending
         const categories = ['general', 'business', 'technology'];
         const allHeadlines = [];
         
@@ -16,31 +15,23 @@ export default async function handler(req, res) {
             }
         }
         
-        // Score articles based on multiple factors
         const scoredArticles = allHeadlines.map(article => {
             let score = 0;
             
-            // Recency score (newer = higher)
             const hoursAgo = (Date.now() - new Date(article.publishedAt)) / 3600000;
             if (hoursAgo < 2) score += 50;
             else if (hoursAgo < 6) score += 30;
             else if (hoursAgo < 12) score += 15;
             
-            // Source credibility boost
             const topSources = ['Reuters', 'BBC', 'CNN', 'Bloomberg', 'The Guardian', 'AP News', 'Financial Times'];
             if (topSources.includes(article.source.name)) score += 20;
             
-            // Title engagement indicators
             const title = article.title.toLowerCase();
             if (title.includes('breaking')) score += 30;
             if (title.includes('live')) score += 25;
             if (title.includes('urgent')) score += 20;
             if (title.includes('trump') || title.includes('biden')) score += 15;
             if (title.includes('market') || title.includes('stock')) score += 10;
-            
-            // Penalize clickbait
-            if (title.includes('you won\'t believe')) score -= 30;
-            if (title.includes('shocking')) score -= 20;
             
             return {
                 title: article.title,
@@ -55,7 +46,6 @@ export default async function handler(req, res) {
             };
         });
         
-        // Remove duplicates by similar titles
         const unique = [];
         const seenTitles = new Set();
         
@@ -67,7 +57,6 @@ export default async function handler(req, res) {
             }
         }
         
-        // Sort by score and get top 5
         const trending = unique
             .sort((a, b) => b.score - a.score)
             .slice(0, 5);
@@ -78,4 +67,4 @@ export default async function handler(req, res) {
         console.error('Trending API error:', error);
         res.status(500).json({ error: error.message });
     }
-}
+};
