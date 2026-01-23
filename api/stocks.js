@@ -1,4 +1,4 @@
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
     try {
         const tickers = ['SPY', 'QQQ', 'AAPL', 'MSFT', 'GOOGL', 'TSLA', 'NVDA', 'META', 'AMZN'];
         
@@ -45,4 +45,4 @@ module.exports = async function handler(req, res) {
         console.error('Stock API error:', error);
         res.status(500).json({ error: error.message });
     }
-};
+}
