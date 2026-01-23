@@ -74,7 +74,7 @@
                 <h2 class="text-sm font-bold uppercase tracking-wide text-slate-600">THE SITUATION YOU MUST KNOW</h2>
             </div>
             
-            <div id="heroStory" class="urgency-critical text-white rounded-2xl p-8 shadow-2xl cursor-pointer hover:scale-[1.02] transition-transform duration-300">
+            <div id="heroStory" class="urgency-critical text-white rounded-2xl p-8 shadow-2xl hover:scale-[1.02] transition-transform duration-300">
                 <div class="animate-pulse">
                     <div class="h-8 bg-white/20 rounded w-3/4 mb-4"></div>
                     <div class="h-4 bg-white/20 rounded w-full mb-2"></div>
@@ -105,10 +105,47 @@
             </div>
             
             <div class="glass-card rounded-xl p-6">
-                <div id="marketSnapshot" class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="animate-pulse">
-                        <div class="h-4 bg-slate-200 rounded mb-2"></div>
-                        <div class="h-6 bg-slate-100 rounded"></div>
+                <!-- Major Indices -->
+                <div class="mb-6">
+                    <h3 class="text-xs font-semibold text-slate-500 mb-3 uppercase tracking-wide">Major Indices</h3>
+                    <div id="majorIndices" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="animate-pulse bg-slate-50 rounded-lg p-3">
+                            <div class="h-3 bg-slate-200 rounded mb-2"></div>
+                            <div class="h-5 bg-slate-100 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sector ETFs -->
+                <div class="mb-6">
+                    <h3 class="text-xs font-semibold text-slate-500 mb-3 uppercase tracking-wide">Sector ETFs</h3>
+                    <div id="sectorETFs" class="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+                        <div class="animate-pulse flex-shrink-0 bg-slate-50 rounded-lg p-3 min-w-[120px]">
+                            <div class="h-3 bg-slate-200 rounded mb-2"></div>
+                            <div class="h-5 bg-slate-100 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Top Movers -->
+                <div class="mb-6">
+                    <h3 class="text-xs font-semibold text-slate-500 mb-3 uppercase tracking-wide">Top Movers</h3>
+                    <div id="topMovers" class="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+                        <div class="animate-pulse flex-shrink-0 bg-slate-50 rounded-lg p-3 min-w-[120px]">
+                            <div class="h-3 bg-slate-200 rounded mb-2"></div>
+                            <div class="h-5 bg-slate-100 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Commodities & Currencies -->
+                <div>
+                    <h3 class="text-xs font-semibold text-slate-500 mb-3 uppercase tracking-wide">Commodities & Currencies</h3>
+                    <div id="commodities" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="animate-pulse bg-slate-50 rounded-lg p-3">
+                            <div class="h-3 bg-slate-200 rounded mb-2"></div>
+                            <div class="h-5 bg-slate-100 rounded"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -267,24 +304,55 @@
         function renderMarketSnapshot(stocks) {
             if (!stocks || stocks.length === 0) return;
             
-            var majorIndices = stocks.filter(function(s) { 
-                return ['SPY', 'QQQ', 'DIA', 'NVDA'].includes(s.ticker); 
-            }).slice(0, 4);
+            // Separate by category
+            var indices = stocks.filter(function(s) { return s.category === 'index'; });
+            var sectors = stocks.filter(function(s) { return s.category === 'sector'; });
+            var regularStocks = stocks.filter(function(s) { return s.category === 'stock'; });
+            var commodities = stocks.filter(function(s) { return s.category === 'commodity'; });
             
-            var html = majorIndices.map(function(stock) {
+            // Sort stocks by absolute change to get top movers
+            var topMovers = regularStocks
+                .sort(function(a, b) { return Math.abs(parseFloat(b.changePercent)) - Math.abs(parseFloat(a.changePercent)); })
+                .slice(0, 6);
+            
+            // Render function for stock cards
+            function renderStockCard(stock, size) {
                 var isUp = stock.direction === 'up';
                 var colorClass = isUp ? 'text-green-600' : 'text-red-600';
-                var arrow = isUp ? '↑' : '↓';
                 var bgClass = isUp ? 'bg-green-50' : 'bg-red-50';
+                var arrow = isUp ? '↑' : '↓';
+                var sign = isUp ? '+' : '';
                 
-                return '<div class="' + bgClass + ' rounded-lg p-4">' +
-                    '<div class="text-sm font-semibold text-slate-600 mb-1">' + stock.ticker + '</div>' +
+                if (size === 'small') {
+                    return '<div class="flex-shrink-0 ' + bgClass + ' rounded-lg p-3 min-w-[120px] hover:shadow-md transition">' +
+                        '<div class="text-xs font-semibold text-slate-600 mb-1">' + stock.displayName + '</div>' +
+                        '<div class="text-lg font-bold text-slate-900 mb-1">$' + stock.price + '</div>' +
+                        '<div class="text-xs font-bold ' + colorClass + '">' + arrow + ' ' + sign + stock.changePercent + '%</div>' +
+                    '</div>';
+                }
+                
+                return '<div class="' + bgClass + ' rounded-lg p-4 hover:shadow-md transition">' +
+                    '<div class="text-sm font-semibold text-slate-600 mb-2">' + stock.displayName + '</div>' +
                     '<div class="text-2xl font-bold text-slate-900 mb-1">$' + stock.price + '</div>' +
-                    '<div class="text-sm font-bold ' + colorClass + '">' + arrow + ' ' + stock.changePercent + '%</div>' +
+                    '<div class="text-sm font-bold ' + colorClass + '">' + arrow + ' ' + sign + stock.changePercent + '%</div>' +
                 '</div>';
-            }).join('');
+            }
             
-            document.getElementById('marketSnapshot').innerHTML = html;
+            // Render major indices
+            var indicesHTML = indices.map(function(s) { return renderStockCard(s, 'large'); }).join('');
+            document.getElementById('majorIndices').innerHTML = indicesHTML;
+            
+            // Render sector ETFs
+            var sectorsHTML = sectors.map(function(s) { return renderStockCard(s, 'small'); }).join('');
+            document.getElementById('sectorETFs').innerHTML = sectorsHTML;
+            
+            // Render top movers
+            var moversHTML = topMovers.map(function(s) { return renderStockCard(s, 'small'); }).join('');
+            document.getElementById('topMovers').innerHTML = moversHTML;
+            
+            // Render commodities
+            var commoditiesHTML = commodities.map(function(s) { return renderStockCard(s, 'large'); }).join('');
+            document.getElementById('commodities').innerHTML = commoditiesHTML;
         }
         
         function renderSearchTrends(trends) {
