@@ -1,7 +1,6 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     const API_KEY = 'f1d96853b6b649c59b823a069b1d7eb8';
     
-    // Blacklist low-quality or overly dominant sources
     const BLOCKED_SOURCES = [
         'The Times of India',
         'India Today',
@@ -26,23 +25,19 @@ export default async function handler(req, res) {
             if (data.articles) allArticles.push(...data.articles);
         }
         
-        // Filter out blocked sources and duplicates
         const filtered = allArticles.filter(article => 
             !BLOCKED_SOURCES.includes(article.source.name)
         );
         
-        // Remove duplicates by title
         const unique = Array.from(new Map(filtered.map(a => [a.title, a])).values());
         
-        // Limit articles per source to ensure diversity
         const sourceCounts = {};
         const diverse = unique.filter(article => {
             const source = article.source.name;
             sourceCounts[source] = (sourceCounts[source] || 0) + 1;
-            return sourceCounts[source] <= 2; // Max 2 articles per source
+            return sourceCounts[source] <= 2;
         });
         
-        // Process articles
         const processed = diverse.slice(0, 15).map(article => {
             const hoursAgo = (Date.now() - new Date(article.publishedAt)) / 3600000;
             const text = (article.title + ' ' + (article.description || '')).toLowerCase();
@@ -61,7 +56,6 @@ export default async function handler(req, res) {
             };
         });
         
-        // Extract keywords for trending
         const titles = processed.map(a => a.title).join(' ');
         const stopWords = ['news', 'says', 'after', 'latest', 'report', 'update', 'live'];
         const words = titles.toLowerCase().match(/\b[a-z]{5,}\b/g) || [];
@@ -80,4 +74,4 @@ export default async function handler(req, res) {
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
-}
+};
