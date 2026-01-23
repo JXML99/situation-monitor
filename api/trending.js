@@ -1,4 +1,4 @@
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
     const API_KEY = 'f1d96853b6b649c59b823a069b1d7eb8';
     
     try {
@@ -67,4 +67,4 @@ module.exports = async function handler(req, res) {
         console.error('Trending API error:', error);
         res.status(500).json({ error: error.message });
     }
-};
+}
