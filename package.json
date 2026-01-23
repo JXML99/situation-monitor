@@ -1,0 +1,6 @@
+{
+  "type": "module",
+  "name": "situation-monitor",
+  "version": "1.0.0",
+  "description": "Daily briefing dashboard"
+}
